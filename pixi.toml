@@ -1,0 +1,36 @@
+[workspace]
+authors = ["Nathen <nathenhale09000@gmail.com>"]
+channels = ["conda-forge"]
+name = "CC_Stats"
+platforms = ["osx-arm64", "win-64"]
+version = "0.1.0"
+
+[tasks]
+build-dataset = "python -m cc_stats.build_dataset"
+build-analysis = { cmd = "python -m cc_stats.build_analysis", depends-on = ["build-dataset"] }
+# Every script and notebook, for the data version CC_DATA selects (default v2),
+# into results/<version>/. See analysis/run_all.py.
+run-analysis = { cmd = "python analysis/run_all.py", depends-on = ["build-analysis"] }
+# Run once per clone: strips notebook outputs (patient rows, results) from every
+# commit, while the notebooks on disk keep theirs.
+setup-git = "nbstripout --install --attributes .gitattributes"
+
+# Editable self-install. This is what makes `from cc_stats...` work from any
+# folder - see the comment in pyproject.toml for the layout.
+[pypi-dependencies]
+cc-stats = { path = ".", editable = true }
+
+[dependencies]
+numpy = ">=2.5.0,<3"
+pandas = ">=3.0.3,<4"
+jupyterlab = ">=4.6.0,<5"
+openpyxl = ">=3.1.5,<4"
+matplotlib = ">=3.11.0,<4"
+# Imported directly by the analysis scripts (scipy.stats everywhere,
+# statsmodels for Wilson CIs and Holm). They were resolving only as transitive
+# dependencies, which is not something to rely on.
+scipy = ">=1.14,<2"
+statsmodels = ">=0.14,<0.15"
+r-base = ">=4.4.3,<4.6"
+r-logistf = ">=1.26.1,<2"
+nbstripout = ">=0.9.1,<0.10"

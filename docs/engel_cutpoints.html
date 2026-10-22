@@ -1,0 +1,413 @@
+<title>Engel Cut Points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --paper:       #f3f7f6;
+    --surface:     #ffffff;
+    --ink:         #13201e;
+    --ink-2:       #3b4f4c;
+    --muted:       #6c7f7c;
+    --rule:        #d6e2df;
+    --rule-strong: #9fb2ae;
+    --accent:      #0d6b62;
+    --accent-soft: #e0efec;
+    --on-accent:   #ffffff;
+    --flag:        #a3452a;
+    --flag-soft:   #f8e9e4;
+    --shadow:      0 1px 2px rgba(19,32,30,.05), 0 8px 24px -16px rgba(19,32,30,.25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:       #0d1514;
+      --surface:     #15201f;
+      --ink:         #e7efed;
+      --ink-2:       #b2c4c1;
+      --muted:       #7d908d;
+      --rule:        #26332f;
+      --rule-strong: #4a5f5b;
+      --accent:      #56b6a8;
+      --accent-soft: #12312d;
+      --on-accent:   #08201d;
+      --flag:        #e28a6b;
+      --flag-soft:   #331e17;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:       #0d1514;
+    --surface:     #15201f;
+    --ink:         #e7efed;
+    --ink-2:       #b2c4c1;
+    --muted:       #7d908d;
+    --rule:        #26332f;
+    --rule-strong: #4a5f5b;
+    --accent:      #56b6a8;
+    --accent-soft: #12312d;
+    --on-accent:   #08201d;
+    --flag:        #e28a6b;
+    --flag-soft:   #331e17;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3.25rem;
+  }
+  .prose { max-width: 40rem; }
+
+  header { display: flex; flex-direction: column; gap: 1rem; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .72rem; font-weight: 500; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  h1 {
+    font-family: Spectral, Georgia, serif; font-weight: 600;
+    font-size: clamp(2.3rem, 6vw, 3.4rem); line-height: 1.05;
+    letter-spacing: -.015em; margin: 0; text-wrap: balance;
+  }
+  .standfirst {
+    font-family: Spectral, Georgia, serif; font-size: 1.2rem; font-style: italic;
+    color: var(--ink-2); margin: 0; max-width: 38rem;
+  }
+
+  h2 {
+    font-family: Spectral, Georgia, serif; font-weight: 600;
+    font-size: 1.6rem; line-height: 1.2; margin: 0 0 .75rem; text-wrap: balance;
+  }
+  p { margin: 0 0 1rem; }
+  p:last-child { margin-bottom: 0; }
+  section { display: flex; flex-direction: column; }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  /* scale glyph */
+  .scale {
+    display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 3px;
+    overflow: hidden; font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .7rem; font-weight: 600; flex: none;
+  }
+  .scale .c {
+    display: flex; align-items: center; justify-content: center;
+    min-width: 2.15rem; padding: .3rem 0; color: var(--muted); background: transparent;
+  }
+  .scale .c.on { background: var(--accent); color: var(--on-accent); }
+  .scale .c.cut { border-right: 3px solid var(--ink); }
+  .scale.none .c { min-width: 4.6rem; letter-spacing: .06em; }
+
+  /* groups */
+  .group { display: flex; flex-direction: column; gap: 1.1rem; }
+  .group-head {
+    display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap;
+    padding-bottom: .7rem; border-bottom: 1px solid var(--rule);
+  }
+  .group-head .label {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .95rem; font-weight: 600; color: var(--ink);
+  }
+  .group-head .gloss { color: var(--muted); font-size: .95rem; }
+  .group-head .count {
+    margin-left: auto; font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+
+  .paper {
+    display: grid; grid-template-columns: 9.4rem 1fr; gap: 1.25rem; align-items: start;
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 5px;
+    padding: 1rem 1.15rem; box-shadow: var(--shadow);
+  }
+  .paper .cite { font-size: 1rem; font-weight: 600; margin: 0 0 .2rem; line-height: 1.35; }
+  .paper .meta {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .74rem;
+    color: var(--muted); margin: 0 0 .5rem; font-variant-numeric: tabular-nums;
+  }
+  .paper blockquote {
+    margin: 0; padding-left: .85rem; border-left: 2px solid var(--accent-soft);
+    color: var(--ink-2); font-family: Spectral, Georgia, serif;
+    font-size: .96rem; line-height: 1.5;
+  }
+  .paper .note { font-size: .92rem; color: var(--muted); margin: .45rem 0 0; }
+
+  .group.mine .paper { border-color: var(--flag); background: var(--flag-soft); }
+  .group.mine .group-head { border-bottom-color: var(--flag); }
+  .group.mine .group-head .label { color: var(--flag); }
+  .group.mine .paper blockquote { border-left-color: var(--flag); }
+  .yours {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .66rem;
+    font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--flag); border: 1px solid var(--flag); border-radius: 2px;
+    padding: .12rem .4rem; white-space: nowrap;
+  }
+
+  .classes { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+  .classes li {
+    display: grid; grid-template-columns: 3rem 1fr; gap: 1rem;
+    padding: .6rem .9rem; background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 4px; align-items: baseline;
+  }
+  .classes .num {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-weight: 600; color: var(--accent);
+  }
+
+  .callout {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent); border-radius: 4px; padding: 1.2rem 1.4rem;
+  }
+  .callout blockquote {
+    margin: 0 0 .8rem; font-family: Spectral, Georgia, serif; font-size: 1.02rem;
+    font-style: italic; color: var(--ink-2); line-height: 1.5;
+  }
+  .callout .attrib { margin: 0; font-size: .9rem; color: var(--muted); }
+
+  .local {
+    display: inline-block; font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .7rem; background: var(--accent-soft); color: var(--accent);
+    border-radius: 2px; padding: .1rem .35rem; white-space: nowrap;
+  }
+
+  .tally {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: .75rem; margin: 0; padding: 0; list-style: none;
+  }
+  .tally li {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent); border-radius: 4px; padding: .85rem 1rem;
+  }
+  .tally .big {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 1.9rem;
+    font-weight: 600; line-height: 1; display: block; font-variant-numeric: tabular-nums;
+  }
+  .tally .cap { font-size: .86rem; color: var(--muted); display: block; margin-top: .3rem; }
+  .tally li.hi { border-top-color: var(--flag); }
+  .tally li.hi .big { color: var(--flag); }
+
+  footer {
+    border-top: 1px solid var(--rule); padding-top: 1.5rem;
+    font-size: .88rem; color: var(--muted);
+  }
+  footer .srcs { margin: .6rem 0 0; }
+
+  @media (max-width: 640px) {
+    .paper { grid-template-columns: 1fr; gap: .8rem; }
+    .wrap { padding-top: 2.5rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Corpus callosotomy · outcome reporting</div>
+    <h1>Engel Cut Points</h1>
+    <p class="standfirst">Where nine callosotomy papers draw the line between a favorable and an unfavorable outcome — and why most of them don't draw it on the Engel scale at all.</p>
+  </header>
+
+  <section>
+    <ul class="tally">
+      <li><span class="big">3</span><span class="cap">use an Engel dichotomy — one at each of the three possible cut points</span></li>
+      <li><span class="big">2</span><span class="cap">report Engel classes but never collapse them</span></li>
+      <li><span class="big">4</span><span class="cap">abandon Engel for drop-attack freedom or ≥50% reduction</span></li>
+      <li class="hi"><span class="big">1</span><span class="cap">uses this study's cut, Engel I–III vs IV</span></li>
+    </ul>
+  </section>
+
+  <section class="prose">
+    <h2>The scale being cut</h2>
+    <ul class="classes">
+      <li><span class="num">I</span><span>Free of disabling seizures</span></li>
+      <li><span class="num">II</span><span>Rare disabling seizures — “almost seizure-free”</span></li>
+      <li><span class="num">III</span><span>Worthwhile improvement</span></li>
+      <li><span class="num">IV</span><span>No worthwhile improvement</span></li>
+    </ul>
+    <p style="margin-top:1rem">Four ordered classes admit three binary splits. All three appear in the callosotomy literature — one paper each, which is the first thing worth knowing: there is no dominant Engel convention in this procedure.</p>
+  </section>
+
+  <section class="group">
+    <div class="group-head">
+      <span class="scale" role="img" aria-label="Favorable: class one. Unfavorable: classes two through four.">
+        <span class="c on cut">I</span><span class="c">II</span><span class="c">III</span><span class="c">IV</span>
+      </span>
+      <span class="label">I vs II–IV</span>
+      <span class="gloss">seizure freedom</span>
+      <span class="count">1 paper</span>
+    </div>
+    <div class="paper">
+      <span class="scale" aria-hidden="true"><span class="c on cut">I</span><span class="c">II</span><span class="c">III</span><span class="c">IV</span></span>
+      <div>
+        <p class="cite">Kanai et al. — Insufficient efficacy of corpus callosotomy for epileptic spasms with biphasic muscular contractions</p>
+        <p class="meta">Frontiers in Neurology · 2020 · n = 17</p>
+        <blockquote>Dichotomized as spasm-free (Engel I, n = 7) against residual spasms (Engel II–IV, n = 10).</blockquote>
+        <p class="note">The strictest bar found in a callosotomy series, and the title reflects what that bar produces: applying the resective standard to a palliative procedure classes 10 of 17 patients as failures.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="group">
+    <div class="group-head">
+      <span class="scale" role="img" aria-label="Favorable: classes one and two. Unfavorable: classes three and four.">
+        <span class="c on">I</span><span class="c on cut">II</span><span class="c">III</span><span class="c">IV</span>
+      </span>
+      <span class="label">I–II vs III–IV</span>
+      <span class="gloss">seizure-free or near-free</span>
+      <span class="count">1 paper</span>
+    </div>
+    <div class="paper">
+      <span class="scale" aria-hidden="true"><span class="c on">I</span><span class="c on cut">II</span><span class="c">III</span><span class="c">IV</span></span>
+      <div>
+        <p class="cite">Seo JS et al. — The outcome of corpus callosotomy for intractable epilepsy</p>
+        <p class="meta">J Korean Neurosurg Soc · 2007 · n = 39 · pp. 16–19</p>
+        <blockquote>“Satisfactory outcome (Engel's class I, II) was obtained in 20 patients (51%) of 39 patients. In 36 cases with drop attack seizures, the class I, II outcomes were 22 patients (61%).”</blockquote>
+        <p class="note">Full distribution reported: class I 8, II 12, III 11, IV 8. Note what the cut does here — the 11 class III patients, all with worthwhile improvement from a palliative operation, are counted as unsatisfactory.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="group mine">
+    <div class="group-head">
+      <span class="scale" role="img" aria-label="Favorable: classes one through three. Unfavorable: class four.">
+        <span class="c on">I</span><span class="c on">II</span><span class="c on cut">III</span><span class="c">IV</span>
+      </span>
+      <span class="label">I–III vs IV</span>
+      <span class="gloss">any worthwhile improvement</span>
+      <span class="yours">This study's cut</span>
+      <span class="count">1 paper</span>
+    </div>
+    <div class="paper">
+      <span class="scale" aria-hidden="true"><span class="c on">I</span><span class="c on">II</span><span class="c on cut">III</span><span class="c">IV</span></span>
+      <div>
+        <p class="cite">Long-term outcomes of corpus callosotomy in adult patients with drug-resistant epilepsy — single center, Mexico</p>
+        <p class="meta">2025 · n = 63</p>
+        <blockquote>Favorable (Engel I–III): 44 patients (69.8%). Unfavorable (Engel IV A–B): 14 (22.2%). Worsening (Engel IV C): 5 (7.9%).</blockquote>
+        <p class="note">The one published precedent for this study's cut, and the closest match in design — adults, callosotomy, long-term follow-up. It also subdivides class IV to separate “no improvement” from “worse than baseline,” which a plain 1–4 <code>engel_class</code> column cannot express.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="group">
+    <div class="group-head">
+      <span class="scale" role="img" aria-label="All four classes reported separately.">
+        <span class="c on">I</span><span class="c on">II</span><span class="c on">III</span><span class="c on">IV</span>
+      </span>
+      <span class="label">Engel reported, never cut</span>
+      <span class="gloss">distribution only, plus a separate primary endpoint</span>
+      <span class="count">2 papers</span>
+    </div>
+    <div class="paper">
+      <span class="scale" aria-hidden="true"><span class="c on">I</span><span class="c on">II</span><span class="c on">III</span><span class="c on">IV</span></span>
+      <div>
+        <p class="cite">Phillips et al. — MR-guided laser ablation versus open corpus callosotomy</p>
+        <p class="meta">Epilepsia Open · 2023 · n = 36, 47 procedures</p>
+        <blockquote>Primary outcome was “a 50% reduction in target seizure” at one year, with atonic seizures as the target. Engel appears only as a secondary analysis, reported class by class.</blockquote>
+      </div>
+    </div>
+    <div class="paper">
+      <span class="scale" aria-hidden="true"><span class="c on">I</span><span class="c on">II</span><span class="c on">III</span><span class="c on">IV</span></span>
+      <div>
+        <p class="cite">Mallela et al. — Stereotactic laser interstitial thermal therapy corpus callosotomy in pediatric drug-resistant epilepsy</p>
+        <p class="meta">Epilepsia Open · 2021 · n = 10, 11 procedures</p>
+        <blockquote>“71% experienced freedom from drop attacks at longest follow-up and 57% of cases showed improvement in their other seizure semiologies as well (Engel Class II: 28%, Class III: 28%, Class IV: 43%).”</blockquote>
+        <p class="note">Drop-attack freedom carries the result; Engel is reported alongside as a distribution rather than a test.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="group">
+    <div class="group-head">
+      <span class="scale none" role="img" aria-label="Engel scale not used.">
+        <span class="c">no Engel</span>
+      </span>
+      <span class="label">Abandons Engel entirely</span>
+      <span class="gloss">seizure freedom or ≥50% reduction</span>
+      <span class="count">4 papers</span>
+    </div>
+    <div class="paper">
+      <span class="scale none" aria-hidden="true"><span class="c">SF / not</span></span>
+      <div>
+        <p class="cite">Chan et al. — Rates and predictors of seizure outcome after corpus callosotomy: a meta-analysis</p>
+        <p class="meta">J Neurosurg · 2018 · 130:1193–1202 · 58 studies, 1,742 patients</p>
+        <blockquote>Endpoints are complete seizure freedom and freedom from drop attacks — roughly one-fifth and one-half of patients respectively. No Engel dichotomy is pooled.</blockquote>
+      </div>
+    </div>
+    <div class="paper">
+      <span class="scale none" aria-hidden="true"><span class="c">SF / not</span></span>
+      <div>
+        <p class="cite">Wu et al. — Long-term follow-up seizure outcomes after corpus callosotomy: systematic review with meta-analysis</p>
+        <p class="meta">Brain and Behavior · 2023 · 49 studies, 1,644 patients</p>
+        <blockquote>“Outcomes were extracted and classified into ‘complete SF’ and ‘incomplete SF’.”</blockquote>
+        <p class="note">The two largest syntheses in the field, covering roughly 3,400 patients between them, both decline the Engel scale.</p>
+      </div>
+    </div>
+    <div class="paper">
+      <span class="scale none" aria-hidden="true"><span class="c">≥50%</span></span>
+      <div>
+        <p class="cite">Complete corpus callosotomy brings worthwhile seizure reduction in both pediatric and adult patients</p>
+        <p class="meta">Neurosurgery · 2025 · Williamson's criteria</p>
+        <blockquote>“The F, E, and G classes were considered to represent worthwhile improvements” — freedom, &gt;80%, and 50–80% reduction, against poor (&lt;50%).</blockquote>
+        <p class="note">Different scale, same boundary: the line falls at 50% reduction, which is where Engel III's lower edge is usually understood to sit.</p>
+      </div>
+    </div>
+    <div class="paper">
+      <span class="scale none" aria-hidden="true"><span class="c">≥50%</span></span>
+      <div>
+        <p class="cite">Chourasia et al. — Influence of extent and age at corpus callosotomy on seizure outcomes</p>
+        <p class="meta">Epilepsia Open · 2023 · n = 38</p>
+        <blockquote>Outcomes defined as “≥50% reduction in drop seizures” and “complete freedom from drop seizures.” Engel appears only when citing other studies.</blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section class="prose">
+    <h2>Why the boundary is soft</h2>
+    <div class="callout">
+      <blockquote>“Engel's category ‘worthwhile improvement’ is ambiguous and is therefore calculated or interpreted differently from center to center. Some centers, for example, ask for a ≥90% reduction; others accept ≥50% or ≥60% or ≥75%… the term ‘worthwhile’ requires a subjective judgment that may not be entirely justified, so this term is best avoided.”</blockquote>
+      <p class="attrib">Wieser et al., ILAE proposal for a new outcome classification, <em>Epilepsia</em> 2001 &nbsp;<span class="local">forPoster/Papers/New-Classification…2001 (1).pdf</span></p>
+    </div>
+    <p style="margin-top:1.2rem">The I–III vs IV split is the least reproducible of the three, because it depends on exactly the boundary the ILAE singled out as center-dependent. Graham et al.'s pediatric callosotomy systematic review (<em>Epilepsia</em> 2016) found the same from the other side, reporting that across twelve studies “there was very little agreement among authors on the definition of a good seizure outcome.”</p>
+    <p>This is also why an ILAE ≤4 vs 5 split is easier to defend than the Engel equivalent: the ILAE scale anchors its boundary to a stated ≥50% reduction rather than to a clinical judgment call.</p>
+  </section>
+
+  <section class="prose">
+    <h2>The argument against cutting at all</h2>
+    <div class="callout">
+      <blockquote>“Relying on seizure freedom as a primary outcome amounts to comparing Engel I vs Engel II–IV. There are two additional dichotomous categorizations: Engel I–II vs Engel III–IV and Engel I–III vs Engel IV. Rather than fit three individual binary regressions, ordinal regression fits three separate intercepts and a common, pooled odds ratio.”</blockquote>
+      <p class="attrib">Dickey, Krafty &amp; Pedersen, <em>Epilepsia Open</em> 2022;7:344–349 &nbsp;<span class="local">forPoster/Papers/EPI4-7-344.pdf</span></p>
+    </div>
+    <p style="margin-top:1.2rem">Across 239 patients from eight studies, their power to detect mesial temporal sclerosis as a predictor was <strong>29% under ordinal regression against 13% under binary logistic</strong> — the same data, more than double the power, purely from not collapsing the scale.</p>
+    <p>With 50 subjects, ten seizure types, and nothing surviving false-discovery correction, that gap is not academic. Some of the null result is genuine absence of signal; some is power discarded at the cut.</p>
+  </section>
+
+  <section class="prose">
+    <h2>What this means for the analysis</h2>
+    <p><strong>The cut is defensible but not conventional.</strong> One published callosotomy series uses Engel I–III vs IV, and it is the closest match to this cohort's design. That is enough to cite, and it is not enough to call standard — a reviewer who asks why seizure freedom wasn't used is asking a fair question.</p>
+    <p><strong>The field's actual convention is a target-seizure endpoint.</strong> Six of the nine papers here judge callosotomy on drop-attack freedom or ≥50% reduction, including both large meta-analyses. A drop-attack or atonic-specific endpoint would sit closer to the literature than any whole-patient Engel dichotomy.</p>
+    <p><strong>Reporting the distribution costs nothing.</strong> Two of the nine report all four Engel classes without collapsing them. Publishing the 5 / 9 / 25 / 11 breakdown alongside the binary lets a reader apply whichever cut they prefer, and pre-empts the objection that the cut was chosen after seeing the results.</p>
+  </section>
+
+  <footer>
+    <p><strong>Scope and verification.</strong> Corpus callosotomy series and callosotomy meta-analyses only; resective and VNS papers excluded. Park et al. (<em>Ann Child Neurol</em> 2023) was dropped despite involving callosotomy patients, because its Engel I–II cut grades the resective surgery that followed, not the callosotomy. Every cut point above was read from the paper's own methods or results text rather than a search summary; two papers are in this repository, marked with local paths.</p>
+    <p class="srcs">Sources: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7142229/">Kanai et al.</a> · <a href="https://jkns.or.kr/upload/pdf/0042006003.pdf">Seo et al.</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12362152/">Mexico cohort</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10839368/">Phillips et al.</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8886067/">Mallela et al.</a> · <a href="https://thejns.org/view/journals/j-neurosurg/130/4/article-p1193.xml">Chan et al.</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10097058/">Wu et al.</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11698267/">Complete callosotomy, Williamson criteria</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10690660/">Chourasia et al.</a> · <a href="https://onlinelibrary.wiley.com/doi/10.1111/epi.13408">Graham et al.</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9159244/">Dickey et al.</a></p>
+  </footer>
+
+</div>
